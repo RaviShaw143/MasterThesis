@@ -103,8 +103,8 @@ def getRandomForestClassifierResults(train_X_Com, test_X_Com, train_Y_Com, test_
 
 #gives Logistic Regression model results
 def getLogisticRegressionResults(train_X_Com, test_X_Com, train_Y_Com, test_Y_Com):        
-    tune_params_LR1 = [{'penalty':['l1'], 'solver':['liblinear','saga'],'max_iter':[2000],'multi_class':['ovr']}]
-    tune_params_LR2 = [{'penalty':['l2'], 'solver':['newton-cg','lbfgs','sag'], 'max_iter':[2000],'multi_class':['multinomial','ovr']}]
+    tune_params_LR1 = [{'penalty':['l1'], 'solver':['liblinear','saga'],'max_iter':[10000],'multi_class':['ovr']}]
+    tune_params_LR2 = [{'penalty':['l2'], 'solver':['newton-cg','lbfgs','sag'], 'max_iter':[10000],'multi_class':['multinomial','ovr']}]
     print("Summary of LogisticRegression using l1 model results: ")            
     findBestEstimator(LogisticRegression(),tune_params_LR1,train_X_Com, test_X_Com, train_Y_Com, test_Y_Com )
     print("Summary of LogisticRegression using l2 model results: ")            
@@ -185,17 +185,4 @@ def getResults (audioFeat, textFeat, audioTextFeat, output, dataset):
     getSupervisedModelResults(train_X_Audtext, test_X_Audtext, train_Y_Audtext, test_Y_Audtext)
 
 	
-#retrieve the current working directory where feature files are located
-featureFilesDirectory = os.path.join(os.getcwd(),"datasets")
-rootDirectoryYouTubeDatasets = os.path.join(featureFilesDirectory,"YouTube")
-print(rootDirectoryYouTubeDatasets)
-rootDirectoryTEAMDatasets = os.path.join(featureFilesDirectory,"TEAM")
-
-# creates the dataframe object of youtube datasets
-inputYouTubeAudioFeat, inputYouTubeTextFeat, inputYouTubeAudioTextFeat, outputYouTube = getYouTubeData(rootDirectoryYouTubeDatasets)
-getResults(inputYouTubeAudioFeat, inputYouTubeTextFeat, inputYouTubeAudioTextFeat, outputYouTube, "YouTube")
-
-# creates the dataframe object of TEAM datasets 
-#inputTeamAudioFeat, inputTeamTextFeat, inputTeamAudioTextFeat, outputTeam = getTEAMData(rootDirectoryTEAMDatasets)
-#getResults(inputTeamAudioFeat, inputTeamTextFeat, inputTeamAudioTextFeat, outputTeam, "TEAM")
 
