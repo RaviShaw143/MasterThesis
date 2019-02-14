@@ -92,4 +92,4 @@ if args.dataset == "TEAM":
     # creates the dataframe object of TEAM datasets 
     inputTeamAudioFeat, inputTeamTextFeat, inputTeamAudioTextFeat, outputTeam = supervisedModels.getTEAMData(rootDirectoryDataset)
     print("LSTM model results for TEAM Datasets:")
-    supervisedModels.getResults(inputTeamAudioFeat, inputTeamTextFeat, inputTeamAudioTextFeat, outputTeam, "TEAM")
+    #getLSTModelResults(inputTeamAudioFeat, inputTeamTextFeat, inputTeamAudioTextFeat, outputTeam, "TEAM")
