@@ -123,6 +123,9 @@ if args.dataset == "YouTube":
     #The below uses a method to obatin a valid data for training and testing LSTM model
     trainX_Text, trainY_Text,  valX_Text, valY_Text, testX_Text, testY_Text = getDataForLSTM(train_X_Audtext, test_X_Audtext, train_Y_Audtext, test_Y_Audtext)
     
+    #Trains and test the LSTM model
+    LSTModel(trainX_Text, trainY_Text,  valX_Text, valY_Text, testX_Text, testY_Text)
+    
     
 
     
