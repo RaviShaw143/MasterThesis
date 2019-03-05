@@ -70,52 +70,7 @@ def LSTModel(trainX, trainY, valX, valY, testX, testY):
                             target_names=target_names))
 
     
-    
-
-"""
-Model to learn feature from the data
-"""    
-def modelToLearnFeat(trainX, trainY, valX, valY, testX, testY):
-    model = Sequential()
-    inputX = len(trainX[0])
-    print (inputX)
-    model.add(LSTM(inputX, dropout=0.2, return_sequences=True, recurrent_dropout=0.2, input_shape = (int(len(trainX[0])),1)))
-    model.add(LSTM(int(inputX/2), dropout=0.2, return_sequences=True, recurrent_dropout=0.2))
-    model.add(LSTM(int(inputX/4), dropout=0.2, return_sequences=True, recurrent_dropout=0.2))
-    model.add(LSTM(int(inputX/8), dropout=0.2, return_sequences=True, recurrent_dropout=0.2))
-    model.add(LSTM(170, dropout=0.2, recurrent_dropout=0.2))
-    model.add(Dense(3, activation='softmax'))    
-    
-    
-    model.compile(loss='categorical_crossentropy',
-                optimizer='adam',
-                metrics=['accuracy' ])
-    model.summary()
-
-    early_stopping = EarlyStopping(monitor='val_loss', patience=5)
-                
-    model.fit(trainX, trainY,
-            epochs=30,
-            verbose =2,
-            callbacks=[early_stopping],
-            validation_data=(valX, valY))
-    
-
-    # collects the output of the layer before the penultimate layer
-    get_3rd_layer_output = K.function([model.layers[0].input],
-                                    [model.layers[4].output])
-                                    
-    layer_output = get_3rd_layer_output([trainX])[0]
-    print(layer_output.shape)
-    print(layer_output)
-
-    
-    score, acc = model.evaluate(testX, testY)
-   
-    print('Test score:', score)
-    print('Test accuracy:', acc)
-            
-                
+                    
 """
 Divides the traning data further in to training and validation set
 expands the dimension of input data as LSTM expects input data to be one dimension higher than the actual dimension
@@ -168,13 +123,6 @@ if args.dataset == "YouTube":
     #The below uses a method to obatin a valid data for training and testing LSTM model
     trainX_Text, trainY_Text,  valX_Text, valY_Text, testX_Text, testY_Text = getDataForLSTM(train_X_Audtext, test_X_Audtext, train_Y_Audtext, test_Y_Audtext)
     
-    print("LSTM model results for YouTube Datasets using reduce (PCA) Text Features :")
-    LSTModel(trainX_Text, trainY_Text,  valX_Text, valY_Text, testX_Text, testY_Text)
     
-    #print ("LSTM model results for YouTube Datasets Text Features :")
-    #trainX, testX, trainY, testY = train_test_split(inputYouTubeTextFeat, outputYouTube, test_size=0.20, random_state=0)
-    #train_X_Text, train_Y_Text,  val_X_Text, val_Y_Text, test_X_Text, test_Y_Text = getDataForLSTM(trainX, testX, trainY, testY)
-    #modelToLearnFeat(train_X_Text, train_Y_Text,  val_X_Text, val_Y_Text, test_X_Text, test_Y_Text)
-
 
     
