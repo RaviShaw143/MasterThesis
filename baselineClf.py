@@ -15,10 +15,13 @@ print(rootDirectoryDataset)
 if args.dataset == "YouTube": 
     # creates the dataframe object of youtube datasets
     inputYouTubeAudioFeat, inputYouTubeTextFeat, inputYouTubeAudioTextFeat, outputYouTube = supervisedModels.getYouTubeData(rootDirectoryDataset)
-    train_X_Audtext, test_X_Audtext, train_Y_Audtext, test_Y_Audtext = supervisedModels.splitDataAfterPCA(inputYouTubeAudioTextFeat, outputYouTube)
+    
+    #following builds all the baseline classifier using You Tube dataset features and reports the results
     supervisedModels.getResults(inputYouTubeAudioFeat, inputYouTubeTextFeat, inputYouTubeAudioTextFeat, outputYouTube, "YouTube")
 
 if args.dataset == "TEAM":
     # creates the dataframe object of TEAM datasets 
     inputTeamAudioFeat, inputTeamTextFeat, inputTeamAudioTextFeat, outputTeam = supervisedModels.getTEAMData(rootDirectoryDataset)
+    
+    #following builds all the baseline classifier using TEAM datasest features and reports the results
     supervisedModels.getResults(inputTeamAudioFeat, inputTeamTextFeat, inputTeamAudioTextFeat, outputTeam, "TEAM")
