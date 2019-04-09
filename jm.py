@@ -11,6 +11,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.metrics import classification_report
 from sklearn.preprocessing import LabelBinarizer
+import tensorflow as tf
 #from tekeras.models import load_model
 import warnings
 warnings.filterwarnings('ignore')    
@@ -140,58 +141,74 @@ def CNNModel(trainX, trainY, valX, valY, testX, testY):
    
 def jointModel(trainX_Text, trainY_Text,  valX_Text, valY_Text, testX_Text, testY_Text, trainX_Aud, trainY_Aud,  valX_Aud, valY_Aud, testX_Aud, testY_Aud):
     
-    #loads the trained audio model
-    atPath1 = os.path.join(os.getcwd(),"MasterThesis","model_LSTM(T.44).h5")        
-    model_lstm = load_model(atPath1)
-    model_lstm.pop()
     
-    for layer in model_lstm.layers:
-        layer.trainable= False
-
-
-    
-    #loads the trained text model
-    atPath2 = os.path.join(os.getcwd(),"MasterThesis","model_cnn(0.46).h5")
-    model_cnn = load_model(atPath2)
-    model_cnn.pop()
-    
-    for layer in model_cnn.layers:
-        layer.trainable= False
-
+    with tf.Session() as session:
+        K.set_session(session)
+        session.run(tf.global_variables_initializer())  
+        session.run(tf.tables_initializer())
+        #model_elmo = build_model() 
+        #model_elmo.load_weights(os.path.join(os.getcwd(),"MasterThesis",'model_elmo_weights(YT0.5).h5'))
+        #model_elmo.save(os.path.join(os.getcwd(),"MasterThesis",'model_elmo_DD(YT0.5).h5'))
+        model_lstm = load_model(os.path.join(os.getcwd(),"MasterThesis",'model_elmo_lstm.h5'))
+        #score, acc = model_elmo.evaluate(testX, testY_oh)
+        #print('Test score:', score)
+        #print('Test accuracy:', acc)
         
-    
-    concat_layer =  Add()([model_lstm.output,model_cnn.output])
-    concat_layer = Dense(190, name = 'fully_connected_layer')(concat_layer)
-    output_layer = Dense(3, activation = "softmax", name = 'final_Dense_layer')(concat_layer)
-    
-    jm = Model ([model_lstm.input,model_cnn.input],output_layer)
-    
-    jm.compile(loss='categorical_crossentropy',
-                optimizer='adam',
-                metrics=['accuracy' ])
-    jm.summary()
-    early_stopping = EarlyStopping(monitor='val_loss', patience=5)            
         
-    jm.fit([trainX_Text,trainX_Aud], trainY_Text, epochs=20, callbacks = [early_stopping], verbose =2,validation_data=([valX_Text,valX_Aud], valY_Text))
+        #loads the trained audio model
+        atPath1 = os.path.join(os.getcwd(),"MasterThesis","model_elmo_lstm.h5")        
+        #model_lstm = load_model(atPath1)
+        print(model_lstm.summary())
+        model_lstm.pop()
+        
+        for layer in model_lstm.layers:
+            layer.trainable= False
+    
+    
+        
+        #loads the trained text model
+        atPath2 = os.path.join(os.getcwd(),"MasterThesis","model_cnn(0.46).h5")
+        model_cnn = load_model(atPath2)
+        print(model_cnn.summary())
+        model_cnn.pop()
+        
+        for layer in model_cnn.layers:
+            layer.trainable= False
     
             
-    score, acc = jm.evaluate([testX_Text,testX_Aud], testY_Text)
-   
-    print('Test score:', score)
-    print('Test accuracy:', acc)
+        
+        concat_layer =  Add()([model_lstm.output,model_cnn.output])
+        concat_layer = Dense(190, name = 'fully_connected_layer')(concat_layer)
+        output_layer = Dense(3, activation = "softmax", name = 'final_Dense_layer')(concat_layer)
+        
+        jm = Model ([model_lstm.input,model_cnn.input],output_layer)
+        
+        jm.compile(loss='categorical_crossentropy',
+                    optimizer='adam',
+                    metrics=['accuracy' ])
+        jm.summary()
+        early_stopping = EarlyStopping(monitor='val_loss', patience=5)            
+            
+        jm.fit([trainX_Text,trainX_Aud], trainY_Text, epochs=20, callbacks = [early_stopping], verbose =2,validation_data=([valX_Text,valX_Aud], valY_Text))
+        
+                
+        score, acc = jm.evaluate([testX_Text,testX_Aud], testY_Text)
     
-    #atPath = os.path.join(os.getcwd(),"MasterThesis","model_jnn(D.).h5")
-    #jm.save(atPath)
-    
-    
-    print("Load the saved joint neural network model")
-    atPath1 = os.path.join(os.getcwd(),"MasterThesis","model_jnn(D.46).h5")
+        print('Test score:', score)
+        print('Test accuracy:', acc)
+        
+        atPath = os.path.join(os.getcwd(),"MasterThesis","model_jnn_elmo(D.).h5")
+        jm.save(atPath)
+        
+        
+    #print("Load the saved joint neural network model")
+    #atPath1 = os.path.join(os.getcwd(),"MasterThesis","model_jnn(D.46).h5")
 
-    model_L_jm = load_model(atPath1)
+    #model_L_jm = load_model(atPath1)
     
-    scoreL, accL = model_L_jm.evaluate([testX_Text,testX_Aud], testY_Text)
-    print('Test score:', scoreL)
-    print('Test accuracy:', accL)
+    #scoreL, accL = model_L_jm.evaluate([testX_Text,testX_Aud], testY_Text)
+    #print('Test score :', scoreL)
+    #print('Test accuracy:', accL)
    
     
    
@@ -211,6 +228,8 @@ print(rootDirectoryDataset)
 The below section is executed if dataset to be use is specified as YouTube
 By default it will be executed unless the argument "--dataset" is assigned "TEAM"
 """
+
+    
 
 if args.dataset == "YouTube":
     

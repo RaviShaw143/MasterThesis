@@ -8,6 +8,9 @@ from tensorflow.keras.layers import LSTM
 from tensorflow.keras.utils import to_categorical
 import numpy as np
 
+import keras.backend as K
+
+
 
 def LSTModel(trainX, trainY, valX, valY, testX, testY):
     model = Sequential()
@@ -82,14 +85,25 @@ def trainLSTModel(trainX, trainY, valX, valY, testX, testY):
                 metrics=['accuracy' ])  
                   
     model.fit(trainX, trainY,
-            batch_size=80,
+            batch_size = 10,
             epochs=10,
             verbose=2,
             validation_data=(valX, valY))
     
+    score, acc = model.evaluate(testX, testY,
+                                batch_size=10,
+                                verbose=2)
+    
+    print('Test score:', score)
+    print('Test accuracy:', acc)
+    
     
   
-    
+ 
+config = K.tf.ConfigProto()
+config.gpu_options.allow_growth = True
+session = K.tf.Session(config=config)
+  
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type = str, default = "YouTube")
@@ -98,7 +112,7 @@ args = parser.parse_args()
 print(args)
 
 #retrieve the current working directory where feature files are located
-featureFilesDirectory = os.path.join(os.getcwd(),"datasets")
+featureFilesDirectory = os.path.join(os.getcwd(),"MasterThesis","datasets")
 rootDirectoryDataset = os.path.join(featureFilesDirectory,args.dataset)
 print(rootDirectoryDataset)
 
