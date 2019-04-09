@@ -15,7 +15,11 @@ print(rootDirectoryDataset)
 if args.dataset == "YouTube": 
     # creates the dataframe object of youtube datasets
     inputYouTubeAudioFeat, inputYouTubeTextFeat, inputYouTubeAudioTextFeat, outputYouTube = supervisedModels.getYouTubeData(rootDirectoryDataset)
-    
+
+
+#    inputTfidfFeat, output = supervisedModels.extractTextFeatures(rootDirectoryDataset)
+#    print(inputTfidfFeat.shape)
+
     #following builds all the baseline classifier using You Tube dataset features and reports the results
     supervisedModels.getResults(inputYouTubeAudioFeat, inputYouTubeTextFeat, inputYouTubeAudioTextFeat, outputYouTube, "YouTube")
 
