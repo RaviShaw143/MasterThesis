@@ -25,7 +25,7 @@ warnings.filterwarnings('ignore')
 
 
     
-def getDataForNeuralModel(X, Y, dataset):
+def getDataForNeuralModel(X, Y,dataset,jm = False):
     
                         
     """
@@ -50,28 +50,36 @@ def getDataForNeuralModel(X, Y, dataset):
     
     #divides the training data into further train and validation set
     trainX, valX, trainY, valY = train_test_split(train_X, train_Y, test_size=0.20, random_state=0)
-      
     #expands the dimension of data to 3 dimension input
     trainX = np.expand_dims(trainX, 2)
     valX = np.expand_dims(valX, 2)
-    if dataset == "YouTube":
-        trainY = to_categorical(trainY, num_classes =3)
-        valY = to_categorical(valY, num_classes =3)
-    if dataset == "TEAM":
-        trainY = to_categorical(trainY, num_classes =2)
-        valY = to_categorical(valY, num_classes =2)
-    
-    #testing set to evaluate the model   
     testX = np.expand_dims(testX, 2)
-    if dataset == "YouTube":
-        testY = to_categorical(testY, num_classes =3)
-    if dataset == "TEAM":
-        testY = to_categorical(testY, num_classes =2)
-    
-    return trainX, trainY, valX, valY, testX, testY
 
-def jointModelYouTube(trainX_Text, trainY_Text,  valX_Text, valY_Text, testX_Text, testY_Text, trainX_Aud, trainY_Aud,  valX_Aud, valY_Aud, testX_Aud, testY_Aud):
+    lb = LabelBinarizer()    
+    if jm==True:
+        trainY = lb.fit_transform(trainY)
+        valY= lb.fit_transform(valY)
+        testY= lb.fit_transform(testY)
+   # optionally, transform labels from int to one-hot vectors
+    if jm == False:
+        if dataset == "YouTube":
+            trainY = to_categorical(trainY, num_classes =3)
+            valY = to_categorical(valY, num_classes =3)
+            testY = to_categorical(testY, num_classes =3)
+        if dataset == "TEAM":
+            trainY = to_categorical(trainY, num_classes =2)
+            valY = to_categorical(valY, num_classes =2)
+            testY = to_categorical(testY, num_classes =2)
+
+    return trainX, trainY, valX, valY, testX, testY, lb
+
+def jointModelYouTube(audioInput, textInputPath, output, dataset ):
     
+    print("loading data...")
+    trainX_Aud, trainY_Aud,  valX_Aud, valY_Aud, testX_Aud, testY_Aud , lb = getDataForNeuralModel(audioInput, output, dataset, True)
+    trainX_Text, trainY_Text,  valX_Text, valY_Text, testX_Text, testY_Text, vocab_size, max_words, embedding_matrix = getDataForEmbedModel(textInputPath, dataset)
+    print("Data loaded")
+
     #loads the pretrained audio model
     atPath1 = os.path.join(os.getcwd(),"MasterThesis","PreTrainedModels","YouTubeModels","embeddingGlove(YT0.389).h5")        
     model_lstm = load_model(atPath1)
@@ -125,8 +133,20 @@ def jointModelYouTube(trainX_Text, trainY_Text,  valX_Text, valY_Text, testX_Tex
     
     scoreL, accL = model_L_jm.evaluate([testX_Text,testX_Aud], testY_Text)
     print('Test accuracy of pretrained joint model:', accL)
+    #pred = model_L_jm.predict([testX_Text,testX_Aud])
+    print("Predictions:")
+    trainPreds = model_L_jm.predict([testX_Text,testX_Aud])
+    target_names = [str(x) for x in lb.classes_]
+    print(classification_report(testY_Text.argmax(axis=1),
+                            trainPreds.argmax(axis=1),
+                            target_names=target_names))    
 
-def CNNModelYouTube(trainX, trainY, valX, valY, testX, testY):
+
+def CNNModelYouTube(inputAudioFeat, output, dataset):
+
+    print("loading data...")
+    trainX, trainY, valX, valY, testX, testY, lb = getDataForNeuralModel(inputAudioFeat, output, dataset)
+    print("Data loaded")
     
     num_features = len (trainX[0])
 
@@ -164,8 +184,12 @@ def CNNModelYouTube(trainX, trainY, valX, valY, testX, testY):
     scoreL, accL = model_L_cnn.evaluate(testX, testY)
     print('Test accuracy of pretrained Audio Model:', accL)
 
-def LSTMModelUsingEmbeddingYouTube(trainX, trainY, valX, valY, testX, testY, vocab_size, max_words, embedding_matrix):
+def LSTMModelUsingEmbeddingYouTube(inputTextPath, dataset):
 
+    print("loading data...")
+    trainX, trainY, valX, valY, testX, testY, vocab_size, max_words, embedding_matrix = getDataForEmbedModel(inputTextPath, dataset)
+    print("data loaded")
+ 
     #defining the model
     model = Sequential()
     model.add(Embedding(vocab_size, 300, input_length = max_words, trainable = False, weights=[embedding_matrix]))
@@ -201,8 +225,14 @@ def LSTMModelUsingEmbeddingYouTube(trainX, trainY, valX, valY, testX, testY, voc
     score1, acc1 = model_l.evaluate(testX, testY)
     print('Test accuracy:', acc1)
     
-def jointModelTEAM(trainX_Text, trainY_Text,  valX_Text, valY_Text, testX_Text, testY_Text, trainX_Aud, trainY_Aud,  valX_Aud, valY_Aud, testX_Aud, testY_Aud):
-    
+def jointModelTEAM(inputAudioFeat, inputTextPath, output, dataset):
+
+    print("loading data...")
+    trainX_Aud, trainY_Aud,  valX_Aud, valY_Aud, testX_Aud, testY_Aud , lb = getDataForNeuralModel(inputAudioFeat, output, dataset, True)
+    trainX_Text, trainY_Text,  valX_Text, valY_Text, testX_Text, testY_Text, vocab_size, max_words, embedding_matrix = getDataForEmbedModel(inputTextPath, dataset)
+    print("Data loaded")
+
+
     #loads the pretrained audio model
 #    atPath1 = os.path.join(os.getcwd(),"PreTrainedModels","embeddingGlove(YT0.389).h5")  
     atPath1 =  os.path.join(os.getcwd(),"MasterThesis","PreTrainedModels","TeamModels","embeddingGlove(T0.78).h5")          
@@ -258,10 +288,19 @@ def jointModelTEAM(trainX_Text, trainY_Text,  valX_Text, valY_Text, testX_Text, 
     
     scoreL, accL = model_L_jm.evaluate([testX_Text,testX_Aud], testY_Text)
     print('Test accuracy of YouTube joint model:', accL)
+    trainPreds = model_L_jm.predict([testX_Text,testX_Aud])
+    target_names = [str(x) for x in lb.classes_]
+    print(classification_report(testY_Text.argmax(axis=1),
+                            trainPreds.argmax(axis=1),
+                            target_names=target_names))    
                   
 
     
-def LSTMModelUsingEmbeddingTEAM(trainX, trainY, valX, valY, testX, testY, vocab_size, max_words, embedding_matrix):
+def LSTMModelUsingEmbeddingTEAM(inputTextPath, dataset):
+
+    print("loading data...")
+    trainX, trainY, valX, valY, testX, testY, vocab_size, max_words, embedding_matrix = getDataForEmbedModel(inputTextPath, dataset)
+    print("Data loaded")
 
     #defining the model
     model = Sequential()
@@ -298,8 +337,13 @@ def LSTMModelUsingEmbeddingTEAM(trainX, trainY, valX, valY, testX, testY, vocab_
     print('Test accuracy:', acc1)
     
 
-def CNNModelTEAM(trainX, trainY, valX, valY, testX, testY):
+def CNNModelTEAM(inputAudioFeat, output, dataset):
 
+    print("loading data...")
+    trainX, trainY, valX, valY, testX, testY, lb = getDataForNeuralModel(inputAudioFeat, output, dataset)
+    print("Data loaded")
+    
+    
     num_features = len (trainX[0])
     model_cnn = Sequential()
     model_cnn.add(Conv1D(64, kernel_size = 3, activation = "tanh", input_shape = (num_features,1)))
@@ -311,7 +355,7 @@ def CNNModelTEAM(trainX, trainY, valX, valY, testX, testY):
     model_cnn.add(Dense(2, activation= "softmax", name = "cnn_output_layer"))
     
     
-    model_cnn.compile(loss='binary_crossentropy',
+    model_cnn.compile(loss='categorical_crossentropy',
                 optimizer='adam',
                 metrics=['accuracy' ])
     
@@ -323,10 +367,10 @@ def CNNModelTEAM(trainX, trainY, valX, valY, testX, testY):
 #            validation_data=(valX, valY))
 
 
-#    score, acc = model_cnn.evaluate(testX, testY)
-#   
-#    print('Test score:', score)
-#    print('Test accuracy:', acc)
+    score, acc = model_cnn.evaluate(testX, testY)
+   
+    print('Test score:', score)
+    print('Test accuracy:', acc)
     
     #following loads the pretrained model to produce reproducilble resluts since models does not produce the same results on every run         
     loadModelAtPath = os.path.join(os.getcwd(),"MasterThesis","PreTrainedModels","TeamModels","Amodel_cnnTEAM(0.51).h5")
@@ -334,7 +378,6 @@ def CNNModelTEAM(trainX, trainY, valX, valY, testX, testY):
     
     scoreL, accL = model_L_cnn.evaluate(testX, testY)
     print('Test accuracy of audio model using cnn:', accL)  
-          
           
 def findMaxNumberOfWords(textData):
     max_words = 0
@@ -394,16 +437,16 @@ def getDataForEmbedModel(textFilePath, dataset):
         
     pad_trainX_seq  = pad_sequences(trainX_seq, maxlen = max_words, padding = 'post')
     pad_testX_seq = pad_sequences(testX_seq, maxlen = max_words, padding = 'post')
-    
+
     if dataset == "YouTube":
         trainY_Text = to_categorical(trainY, num_classes =3)
         testY_Text = to_categorical(testY, num_classes =3)
-        #splitting off the validation set
+        #splitting the training data into train and validation set
         trainX_Text, valX_Text, trainY_Text, valY_Text = train_test_split(pad_trainX_seq, trainY_Text, test_size = 0.20, random_state = 0)
     if dataset == "TEAM":
         trainY_Text = to_categorical(trainY, num_classes =2)
         testY_Text = to_categorical(testY, num_classes =2)    
-        #splitting off the validation set
+        #splitting the training data into train and validation set
         trainX_Text, valX_Text, trainY_Text, valY_Text = train_test_split(pad_trainX_seq, trainY_Text, test_size = 0.20, random_state = 0)    
     #gets the embedding matrix
     if dataset == "YouTube":        
@@ -416,7 +459,7 @@ def getDataForEmbedModel(textFilePath, dataset):
     f = open(saveEmbeddingMatrix, 'rb') 
     embedding_matrix = pickle.load(f)
     
-    return trainX_Text, trainY_Text, valX_Text, valY_Text, pad_testX_seq, testY_Text, vocab_size, max_words, embedding_matrix
+    return trainX_Text, trainY_Text, valX_Text, valY_Text, pad_testX_seq, testY_Text, vocab_size, max_words, embedding_matrix 
 
 
 def normalizeTextData(text, remove_stopwords = False, lemmatization = False):
@@ -481,10 +524,15 @@ def embeddingMatrix(vocab_size, tok, dataset):
     return embedding_matrix
 
 
-def allModelResults(trainX_Text, trainY_Text,  valX_Text, valY_Text, testX_Text, testY_Text, trainX_Aud, trainY_Aud,  valX_Aud, valY_Aud, testX_Aud, testY_Aud,dataset):
+def allModelResults(inputAudioFeat, inputTextPath, output, dataset):
     """
     * Loads pretrained models and evaluate the models on the test dataset
     """
+    
+    print("loading data...")
+    trainX_Aud, trainY_Aud,  valX_Aud, valY_Aud, testX_Aud, testY_Aud , lb = getDataForNeuralModel(inputAudioFeat, output, dataset)
+    trainX_Text, trainY_Text,  valX_Text, valY_Text, testX_Text, testY_Text, vocab_size, max_words, embedding_matrix = getDataForEmbedModel(inputTextPath, dataset)
+    print("Data loaded")
     
     if dataset == "YouTube":     
         
@@ -562,45 +610,29 @@ if args.dataset == "YouTube":
     # creates the dataframe object of youtube datasets
     inputYouTubeAudioFeat, inputYouTubeTextFeat, inputYouTubeAudioTextFeat, outputYouTube = supervisedModels.getYouTubeData(rootDirectoryDataset)
 
-    #data for CNN model
-    trainX_Aud, trainY_Aud,  valX_Aud, valY_Aud, testX_Aud, testY_Aud = getDataForNeuralModel(inputYouTubeAudioFeat, outputYouTube, "YouTube")
-    
-    print("Preprocessing data for lstm model")
-    trainX_EmbedText, trainY_EmbedText,  valX_EmbedText, valY_EmbedText, testX_EmbedText, testY_EmbedText, vocab_size, max_words, embedding_matrix = getDataForEmbedModel(rootDirectoryDataset, "YouTube")
-    print("Data for lstm model loaded")
-
     print("Joint model result using text embedding features and audio features") 
-    jointModelYouTube(trainX_EmbedText, trainY_EmbedText,  valX_EmbedText, valY_EmbedText, testX_EmbedText, testY_EmbedText, trainX_Aud, trainY_Aud,  valX_Aud, valY_Aud, testX_Aud, testY_Aud)
+    jointModelYouTube(inputYouTubeAudioFeat, rootDirectoryDataset, outputYouTube, "YouTube" )
 
-#    allModelResults(trainX_EmbedText, trainY_EmbedText,  valX_EmbedText, valY_EmbedText, testX_EmbedText, testY_EmbedText, trainX_Aud, trainY_Aud,  valX_Aud, valY_Aud, testX_Aud, testY_Aud, "YouTube") 
- 
+#    allModelResults(inputYouTubeAudioFeat,rootDirectoryDataset, outputYouTube, "YouTube")
+
 #    print("Builds LSTM model using embedding vectors")
-#    LSTMModelUsingEmbeddingYouTube(trainX_EmbedText, trainY_EmbedText,  valX_EmbedText, valY_EmbedText, testX_EmbedText, testY_EmbedText, vocab_size, max_words, embedding_matrix )
-    
+#    LSTMModelUsingEmbeddingYouTube(rootDirectoryDataset, "YouTube")
+
 #    print("Builds CNN model using audio features")
-#    CNNModelYouTube(trainX_Aud, trainY_Aud,  valX_Aud, valY_Aud, testX_Aud, testY_Aud)
+#    CNNModelYouTube(inputYouTubeAudioFeat, outputYouTube, "YouTube")
     
 
 if args.dataset == "TEAM":
     # creates the dataframe object of youtube datasets
     inputTEAMAudioFeat, inputTEAMTextFeat, inputTEAMAudioTextFeat, outputTEAM = supervisedModels.getTEAMData(rootDirectoryDataset)
-            
-    #data for CNN model
-    trainX_Aud, trainY_Aud,  valX_Aud, valY_Aud, testX_Aud, testY_Aud = getDataForNeuralModel(inputTEAMAudioFeat, outputTEAM, "TEAM")
-    
-    print("Preprocessing data for lstm model")
-    #data for LSTM model
-    trainX_EmbedText, trainY_EmbedText,  valX_EmbedText, valY_EmbedText, testX_EmbedText, testY_EmbedText, vocab_size, max_words, embedding_matrix = getDataForEmbedModel(rootDirectoryDataset, "TEAM")
-    print("Data for lstm model loaded")
 
-    print("Joint model result using text embedding features and audio features") 
-    jointModelTEAM(trainX_EmbedText, trainY_EmbedText,  valX_EmbedText, valY_EmbedText, testX_EmbedText, testY_EmbedText, trainX_Aud, trainY_Aud,  valX_Aud, valY_Aud, testX_Aud, testY_Aud)
+    print("Joint model result using text embedding features and audio features")     
+    jointModelTEAM(inputTEAMAudioFeat, rootDirectoryDataset, outputTEAM, "TEAM" )
 
-#    allModelResults(trainX_EmbedText, trainY_EmbedText,  valX_EmbedText, valY_EmbedText, testX_EmbedText, testY_EmbedText, trainX_Aud, trainY_Aud,  valX_Aud, valY_Aud, testX_Aud, testY_Aud, "TEAM")
-      
+#    allModelResults(inputTEAMAudioFeat,rootDirectoryDataset, outputTEAM, "TEAM")
+
 #    print("Builds LSTM model using embedding vectors")
-#    LSTMModelUsingEmbeddingTEAM(trainX_EmbedText, trainY_EmbedText,  valX_EmbedText, valY_EmbedText, testX_EmbedText, testY_EmbedText, vocab_size, max_words, embedding_matrix )
-    
+#    LSTMModelUsingEmbeddingTEAM(rootDirectoryDataset, "TEAM")
+
 #    print("Builds CNN model using audio features")
-#    CNNModelTEAM(trainX_Aud, trainY_Aud,  valX_Aud, valY_Aud, testX_Aud, testY_Aud)
-    
+#    CNNModelTEAM(inputTEAMAudioFeat, outputTEAM, "TEAM")
